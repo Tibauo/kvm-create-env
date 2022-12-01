@@ -1,0 +1,82 @@
+---
+# tasks file for kvm
+#- name: install packages
+#  ansible.builtin.dnf:
+#    name: "{{ item }}"
+#    state: latest
+#  loop: "{{ packages }}"
+#
+#- name: enable firewalld
+#  ansible.builtin.systemd:
+#    state: started
+#    enabled: yes
+#    name: libvirtd
+#
+#- name: create folders
+#  ansible.builtin.file:
+#    path: "{{ item }}"
+#    recurse: yes
+#    state: directory
+#  loop:
+#    - /root/kvm/networks
+#    - /root/kvm/vms
+#    - /root/kvm/volumes
+#    - /root/kvm/pools
+#    - /root/kvm/images
+#    - /home/pools
+#
+- name: push conf 
+  ansible.builtin.template:
+    src: "{{ item.xml }}"
+    dest: "{{ item.path }}"
+  loop:
+    - { xml: pool.xml.j2, path: /root/kvm/pools/pool.xml }
+    - { xml: qemu.conf.j2, path: /etc/libvirt/qemu.conf }
+
+- name: push network
+  ansible.builtin.template:
+    src: "network.xml.j2"
+    dest: "{{ item.path }}/{{ item.name }}.xml"
+  loop: "{{ qemu_networks }}"
+
+- name: push volume
+  ansible.builtin.template:
+    src: "volume.xml.j2"
+    dest: "{{ item.1.path_xml }}/{{ item.1.name }}.xml"
+  loop: "{{ qemu_vms | subelements('volume') }}"
+  when: item.1.size_gb is defined
+
+- name: push vms
+  ansible.builtin.template:
+    src: "vm.xml.j2"
+    dest: "{{ item.path_xml }}/{{ item.name }}.xml"
+  loop: "{{ qemu_vms }}"
+#
+#- name: restart libvirtd
+#  ansible.builtin.systemd:
+#    state: restarted
+#    name: libvirtd
+
+- name: Create Pool
+  command: |
+    virsh pool-create /root/kvm/pools/pool.xml
+  ignore_errors: yes
+
+- name: Create Vol
+  command: |
+    /usr/bin/virsh vol-create {{ qemu_pool.name }} {{ item.1.path_xml }}/{{ item.1.name }}.xml
+  loop: "{{ qemu_vms | subelements('volume') }}"
+  when: item.1.size_gb is defined
+  ignore_errors: yes
+
+- name: Create Net
+  command: |
+    /usr/bin/virsh net-create {{ item.path }}/{{ item.name }}.xml
+  loop: "{{ qemu_networks }}"
+  ignore_errors: yes
+
+- name: Create vms
+  command: |
+    /usr/bin/virsh create {{ item.path_xml }}/{{ item.name }}.xml
+  loop: "{{ qemu_vms }}"
+  ignore_errors: yes

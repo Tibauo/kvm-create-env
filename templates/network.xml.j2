@@ -1,0 +1,17 @@
+<network>
+  <name>{{ item.name }}</name>
+  <forward mode='nat'>
+    <nat>
+      <port start='1024' end='65535'/>
+    </nat>
+  </forward>
+  <bridge name='{{ item.name }}' stp='on' delay=''/>
+  <ip address='{{ item.gateway }}' netmask='{{ item.netmask }}'>
+    <dhcp>
+      <range start='{{ item.first_ip }}' end='{{ item.last_ip }}'/>
+{% for value in item.address %}
+      <host mac='{{ value.mac_address }}' ip='{{ value.ip }}'/>
+{% endfor %}
+    </dhcp>
+  </ip>
+</network>

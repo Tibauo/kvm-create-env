@@ -1,0 +1,121 @@
+packages:
+  - qemu-kvm
+  - qemu-img
+  - libvirt
+  - virt-install
+  - libvirt-client
+  - virt-manager
+
+dir_scripts: "/root/kvm"
+
+qemu_pool:
+  path: /home/pools
+  name: lab_pool
+
+qemu_networks:
+  - name: pxe
+    gateway: 172.16.1.1
+    netmask: 255.255.255.0
+    first_ip: 172.16.1.2
+    last_ip: 172.16.1.254
+    path: "{{ dir_scripts }}/networks"
+    address:
+      - mac_address: 52:54:00:f2:47:3a
+        ip: 172.16.1.10
+      - mac_address: 52:54:11:f2:47:3a
+        ip: 172.16.1.20
+  - name: management
+    gateway: 172.17.1.1
+    netmask: 255.255.255.0
+    first_ip: 172.17.1.2
+    last_ip: 172.17.1.254
+    path: "{{ dir_scripts }}/networks"
+    address:
+      - mac_address: 52:54:00:f2:47:3b
+        ip: 172.17.1.10
+      - mac_address: 52:54:11:f2:47:3b
+        ip: 172.17.1.20
+  - name: proxy
+    gateway: 172.18.1.1
+    netmask: 255.255.255.0
+    first_ip: 172.18.1.2
+    last_ip: 172.18.1.254
+    path: "{{ dir_scripts }}/networks"
+    address:
+      - mac_address: 52:54:00:f2:47:3c
+        ip: 172.18.1.10
+      - mac_address: 52:54:11:f2:47:3c
+        ip: 172.18.1.20
+
+qemu_vms:
+  - name: pxe
+    path_xml: "{{ dir_scripts }}/vms"
+    memory: 4
+    cpu: 4
+    volume:
+      - name: pxe
+        size_gb: 40
+        path_volume: /home/pools/pxe
+        path_xml: "{{ dir_scripts }}/volumes"
+        dev: vda
+        device: disk
+        bus: virtio
+      - name: cdrom
+        device: cdrom
+        path_volume: /root/kvm/images/rhel-8.6.iso
+        dev: sda
+        path_xml: "{{ dir_scripts }}/volumes"
+        bus: sata
+        cdrom: yes
+    network:
+      - name: pxe
+        mac_address: "52:54:00:f2:47:3a"
+      - name: management
+        mac_address: "52:54:00:f2:47:3b"
+      - name: proxy
+        mac_address: "52:54:00:f2:47:3c"
+  - name: foreman
+    path_xml: "{{ dir_scripts }}/vms"
+    memory: 16
+    cpu: 8
+    volume:
+      - name: foreman
+        size_gb: 200
+        path_volume: /home/pools/foreman
+        path_xml: "{{ dir_scripts }}/volumes"
+        dev: vda
+        device: disk
+        bus: virtio
+      - name: cdrom
+        device: cdrom
+        path_volume: /root/kvm/images/rhel-8.6.iso
+        dev: sda
+        path_xml: "{{ dir_scripts }}/volumes"
+        bus: sata
+        cdrom: yes
+    network:
+      - name: pxe
+        mac_address: "52:54:11:f2:47:3a"
+      - name: management
+        mac_address: "52:54:11:f2:47:3b"
+      - name: proxy
+        mac_address: "52:54:11:f2:47:3c"
+  - name: proxy
+    path_xml: "{{ dir_scripts }}/vms"
+    memory: 4
+    cpu: 4
+    volume:
+      - name: proxy
+        size_gb: 20
+        path_volume: /home/pools/proxy
+        path_xml: "{{ dir_scripts }}/volumes"
+        dev: vda
+        device: disk
+        bus: virtio
+    network:
+      - name: pxe
+        mac_address: "52:54:12:f2:47:3a"
+      - name: management
+        mac_address: "52:54:12:f2:47:3b"
+      - name: proxy
+        mac_address: "52:54:12:f2:47:3c"
