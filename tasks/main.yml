@@ -1,30 +1,30 @@
 ---
 # tasks file for kvm
-#- name: install packages
-#  ansible.builtin.dnf:
-#    name: "{{ item }}"
-#    state: latest
-#  loop: "{{ packages }}"
-#
-#- name: enable firewalld
-#  ansible.builtin.systemd:
-#    state: started
-#    enabled: yes
-#    name: libvirtd
-#
-#- name: create folders
-#  ansible.builtin.file:
-#    path: "{{ item }}"
-#    recurse: yes
-#    state: directory
-#  loop:
-#    - /root/kvm/networks
-#    - /root/kvm/vms
-#    - /root/kvm/volumes
-#    - /root/kvm/pools
-#    - /root/kvm/images
-#    - /home/pools
-#
+- name: install packages
+  ansible.builtin.dnf:
+    name: "{{ item }}"
+    state: latest
+  loop: "{{ packages }}"
+
+- name: enable firewalld
+  ansible.builtin.systemd:
+    state: started
+    enabled: yes
+    name: libvirtd
+
+- name: create folders
+  ansible.builtin.file:
+    path: "{{ item }}"
+    recurse: yes
+    state: directory
+  loop:
+    - /root/kvm/networks
+    - /root/kvm/vms
+    - /root/kvm/volumes
+    - /root/kvm/pools
+    - /root/kvm/images
+    - /home/pools
+
 - name: push conf 
   ansible.builtin.template:
     src: "{{ item.xml }}"
@@ -51,11 +51,11 @@
     src: "vm.xml.j2"
     dest: "{{ item.path_xml }}/{{ item.name }}.xml"
   loop: "{{ qemu_vms }}"
-#
-#- name: restart libvirtd
-#  ansible.builtin.systemd:
-#    state: restarted
-#    name: libvirtd
+
+- name: restart libvirtd
+  ansible.builtin.systemd:
+    state: restarted
+    name: libvirtd
 
 - name: Create Pool
   command: |
